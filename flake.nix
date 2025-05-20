@@ -6,11 +6,23 @@
   outputs =
     inputs:
     let
-      system = "x86_64-linux";
-      pkgs = import inputs.nixpkgs { inherit system; };
+      forAllSystems = inputs.nixpkgs.lib.genAttrs [
+        "x86_64-linux"
+        "x86_64-darwin"
+        "aarch64-linux"
+        "aarch64-darwin"
+      ];
     in
     {
-      packages.x86_64-linux.nixspect = import ./package.nix { inherit pkgs; };
-      packages.x86_64-linux.default = inputs.self.packages.x86_64-linux.nixspect;
+      packages = forAllSystems (
+        system:
+        let
+          pkgs = inputs.nixpkgs.legacyPackages."${system}";
+        in
+        {
+          nixspect = import ./package.nix { inherit pkgs; };
+          default = inputs.self.packages."${system}".nixspect;
+        }
+      );
     };
 }
